@@ -1,6 +1,6 @@
 {
   "name": "jsxtache",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "dependencies": {
     "chalk": "~0.5.1",
     "esprima": "~1.2.2",
@@ -13,6 +13,9 @@
   },
   "devDependencies": {
     "jest-cli": "~0.1.18"
+  },
+  "bin": {
+    "jsxtache": "./bin/jsxtache"
   },
   "scripts": {
     "test": "jest"
