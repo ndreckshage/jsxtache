@@ -1,0 +1,20 @@
+{
+  "name": "jsxtache",
+  "version": "0.0.1",
+  "dependencies": {
+    "chalk": "~0.5.1",
+    "esprima": "~1.2.2",
+    "lodash": "~2.4.1",
+    "minimist": "~1.1.0",
+    "mkdirp": "~0.5.0",
+    "mustache": "~0.8.2",
+    "react": "~0.12.0",
+    "react-tools": "~0.12.0"
+  },
+  "devDependencies": {
+    "jest-cli": "~0.1.18"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
