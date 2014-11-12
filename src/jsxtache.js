@@ -418,13 +418,16 @@ function handleMustachePartial(path) {
 /**
  *
  */
-function handleJSXPartial(path) {
+function handleJSXPartial(path, scope, additionalProps) {
   var varName = path.split('/').map(function(part) {
     return part.charAt(0).toUpperCase() + part.slice(1);
   }).join('');
   requirePartials.push({ varName: varName, path: path});
   // @TODO need to be able to pass state etc down as well
-  return '<' + varName + ' ' + JSX_TAGS[0] +  '...this.props' + JSX_TAGS[1] + ' />';
+  if (!scope) {
+    scope = 'this.props';
+  }
+  return '<' + varName + ' ' + JSX_TAGS[0] +  '...' + scope + JSX_TAGS[1] + ' ' + additionalProps + ' />';
 }
 
 /**
@@ -494,11 +497,18 @@ function crossCompile(mustache, jsx, tokens, scope, key, removePropsState) {
       // handle comments. well, ignore comments.
       break;
     case '>':
+      var parts = val.split(' ');
+      parts = lodash.reject(parts, function (el) {
+        return !el;
+      });
+      var partial = parts.shift();
+      var additionalProps = parts.join(' ');
+
       if (!!mustache || mustache === '') {
-        mustache += handleMustachePartial(val);
+        mustache += handleMustachePartial(partial);
       }
       if (!!jsx || jsx === '') {
-        jsx += handleJSXPartial(val);
+        jsx += handleJSXPartial(partial, scope, additionalProps);
       }
     }
   }

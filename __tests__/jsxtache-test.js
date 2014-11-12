@@ -1,26 +1,12 @@
 "use strict";
+jest.autoMockOff();
 
 // @TODO refactor this
 
-require('mock-modules').autoMockOff();
-var transform = require('../src/jsxtache');
+var transform = require('./../src/jsxtache');
+var render = require('./../__helpers__/render');
 var mustache = require('mustache');
 var React = require('react');
-
-/**
- * helper to test render
- * typically, rendered mustache should === rendered react
- */
-function render(result, data) {
-  var m = mustache.render(result.mustache, data);
-  var Component = React.createFactory(eval(result.js));
-  var component = Component(data);
-  var r = React.renderToStaticMarkup(component);
-  return {
-    mustache: m,
-    react: r
-  }
-}
 
 describe('jsxtache mustache template', function() {
   it('defers to mustache method', function() {
@@ -522,50 +508,6 @@ describe('jsxtache handles comments', function() {
     var result = transform(code);
     var rendered = render(result, { people: true });
     expect(rendered.mustache).toEqual(rendered.react);
-  });
-});
-
-describe('jsxtache handles partials', function() {
-  it('handles partials', function() {
-    var code = [
-      "var React = require('react');",
-      "module.exports = React.createClass({",
-      "  render: function() {",
-      "    return (",
-      "      '<div>{{> partials/something}}</div>'",
-      "    );",
-      "  }",
-      "});"
-    ].join('\n');
-
-    var expected = {
-      mustache: '<div>{{> partials/something}}</div>',
-      jsx: [
-        "var PartialsSomething = require('partials/something');",
-        "var React = require('react');",
-        "module.exports = React.createClass({",
-        "  render: function() {",
-        "    return (",
-        "<div><PartialsSomething {...this.props} /></div>",
-        "    );",
-        "  }",
-        "});"
-      ].join('\n'),
-      js: [
-        "var PartialsSomething = require('partials/something');",
-        "var React = require('react');",
-        "module.exports = React.createClass({displayName: 'exports',",
-        "  render: function() {",
-        "    return (",
-        'React.createElement("div", null, React.createElement(PartialsSomething, React.__spread({},  this.props)))',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n')
-    }
-
-    var result = transform(code);
-    expect(result).toEqual(expected);
   });
 });
 
