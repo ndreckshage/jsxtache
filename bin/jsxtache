@@ -22,6 +22,14 @@ var MUSTACHE_EXTENSION = '.mustache';
 var JSX_EXTENSION = '.jsx';
 var JS_EXTENSION = '.js';
 
+var mustacheOutExtension = args['mustache-out-ext'] || '.mustache';
+var jsxOutExtension = args['jsx-out-ext'] || '.jsx';
+var jsOutExtension = args['js-out-ext'] || '.js';
+
+var mustacheFNAppend = args['mustache-filename-append'] || '';
+var jsxFNAppend = args['jsx-filename-append'] || '';
+var jsFNAppend = args['js-filename-append'] || '';
+
 /**
  *
  */
@@ -31,6 +39,12 @@ function logInfo() {
   console.log(chalk.cyan('  --mustache (Default: null)'));
   console.log(chalk.cyan('  --jsx (Default: null)'));
   console.log(chalk.cyan('  --js (Default: null)'));
+  console.log(chalk.cyan('  --mustache-out-ext (Default: .mustache)'));
+  console.log(chalk.cyan('  --jsx-out-ext (Default: .jsx)'));
+  console.log(chalk.cyan('  --js-out-ext (Default: .js)'));
+  console.log(chalk.cyan('  --mustache-filename-append (Default: "")'));
+  console.log(chalk.cyan('  --jsx-filename-append (Default: "")'));
+  console.log(chalk.cyan('  --js-filename-append (Default: "")'));
   console.log(chalk.cyan('jsxtache help'));
   console.log(chalk.cyan('jsxtache version'));
 }
@@ -137,12 +151,12 @@ function compile(group, name) {
   }
 
   var compiled = transform(jsx, jsxtache, mustache);
-  write(compiled.mustache, mustacheDir + '/' + name + MUSTACHE_EXTENSION);
+  write(compiled.mustache, mustacheDir + '/' + name + mustacheFNAppend + mustacheOutExtension);
   if (!!jsxDir) {
-    write(compiled.jsx, jsxDir + '/' + name + JSX_EXTENSION);
+    write(compiled.jsx, jsxDir + '/' + name + jsxFNAppend + jsxOutExtension);
   }
   if (!!jsDir) {
-    write(compiled.js, jsDir + '/' + name + JS_EXTENSION);
+    write(compiled.js, jsDir + '/' + name + jsFNAppend + jsOutExtension);
   }
 }
 
