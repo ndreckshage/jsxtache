@@ -11,48 +11,73 @@ describe("jsxstache handles html attributes", function() {
       "module.exports = React.createClass({",
       "  render: function() {",
       "    return (",
-      "      '<div {{*' +",
-      "        'class={' +",
-      "           '\"something\":\"this.props.something\",' +",
-      "           '\"another\": true' +",
-      "         '}' +",
-      "       '*}}>' +",
-      "        '<p>Hello</p>' +",
-      "      '</div>'",
+      "'<div {{*' +",
+      "'  className:\\n'+",
+      "'    \"something\": this.props.something\\n'+",
+      "'    \"another\": true\\n'+",
+      "'*}}>' +",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
       "    );",
       "  }",
       "});"
     ].join('\n');
 
-    var expected = {
-      mustache: '<div class="{{#something}} something{{/something}} another"><p>Hello</p></div>',
-      jsx: [
-        "var React = require('react');",
-        "module.exports = React.createClass({",
-        "  render: function() {",
-        "    return (",
-        '<div className={"" + (!!this.props.something ? " something" : "") + (!!true ? " another" : "")}><p>Hello</p></div>',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n'),
-      js: [
-        "var React = require('react');",
-        "module.exports = React.createClass({displayName: 'exports',",
-        "  render: function() {",
-        "    return (",
-        'React.createElement("div", {className: "" + (!!this.props.something ? " something" : "") + (!!true ? " another" : "")}, React.createElement("p", null, "Hello"))',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n')
-    }
+    var result = transform(code);
+    var rendered = render(result, { something: true });
+    var expected = '<div class=" something another"><p>Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
+
+  it('handles simple css class assignment', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div {{*\\n' +",
+      "'  className: this.props.something + \"-more\"\\n'+",
+      "'*}}>' +",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
 
     var result = transform(code);
-    expect(result).toEqual(expected);
-    var rendered = render(result, { something: true });
-    expect(rendered.mustache).toEqual(rendered.react);
+    var rendered = render(result, { something: "smile" });
+    var expected = '<div class="smile-more"><p>Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
+
+  it('handles css classes w single/dbl quotes', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div {{*' +",
+      "'  className:\\n'+",
+      "'    \"something\": this.props.something\\n'+",
+      "'    \\'another\\': true\\n'+",
+      "'*}}>' +",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, { something: true });
+    var expected = '<div class=" something another"><p>Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
+
 
   it('handles css classes with inverse', function() {
     var code = [
@@ -60,17 +85,16 @@ describe("jsxstache handles html attributes", function() {
       "module.exports = React.createClass({",
       "  render: function() {",
       "    return (",
-      "      '<div {{*' +",
-      "        'class={' +",
-      "           '\"something\":\"!!!!!!!this.props.something\",' +",
-      "           '\"something-else\":\"!!this.props.hello\",' +",
-      "           '\"hello\":\"!this.props.hello\",' +",
-      "           '\"goodbye\": false,' +",
-      "           '\"another\": true' +",
-      "         '}' +",
-      "       '*}}>' +",
-      "        '<p>Hello</p>' +",
-      "      '</div>'",
+      "'<div {{*' +",
+      "'  className:\\n'+",
+      "'    \"something\": !!!!!!!this.props.something\\n'+",
+      "'    \"something-else\": !!this.props.hello\\n'+",
+      "'    \"hello\": !this.props.hello\\n'+",
+      "'    \"goodbye\": false\\n'+",
+      "'    \"another\": true\\n'+",
+      "'*}}>'+",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
       "    );",
       "  }",
       "});"
@@ -78,7 +102,41 @@ describe("jsxstache handles html attributes", function() {
 
     var result = transform(code);
     var rendered = render(result, { something: false, hello: true });
-    expect(rendered.mustache).toEqual(rendered.react);
+    var expected = '<div class=" something something-else another"><p>Hello</p></div>'
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
+
+  it('handles css classes no matter how crazy they get', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div {{*' +",
+      "'  className:\\n'+",
+      "'    \"hello\": true\\n'+",
+      "'    \"hi goodbye ok\": true\\n'+",
+      "'    this.props.something: true\\n'+",
+      "'    this.props.something + \"-a\": true\\n'+",
+      "'    \"b-\" + this.props.something: true\\n'+",
+      "'    this.props.something + \"-c\": !!!!!!!!this.props.something\\n'+",
+      "'    this.props.something + \"-d\": !!!!!!!this.props.something\\n'+",
+      "'    this.props.something + this.props.something_else: true\\n'+",
+      "'    this.props.something_else + this.props.something: false\\n'+",
+      "'*}}>'+",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, { something: 'yyy', something_else: 'ooo' });
+    var expected = '<div class=" hello hi goodbye ok yyy yyy-a b-yyy yyy-c yyyooo"><p>Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
 
   it('handles id, src, data- etc', function() {
@@ -87,23 +145,28 @@ describe("jsxstache handles html attributes", function() {
       "module.exports = React.createClass({",
       "  render: function() {",
       "    return (",
-      "      '<div {{*' +",
-      "        'class={' +",
-      "           '\"another\": true' +",
-      "         '}' +",
-      "         '      id={this.props.something}' +",
-      "         '      data-something={this.props.something}' +",
-      "         '      src={\"hello\"}' +",
-      "       '*}}>' +",
-      "        '<p>Hello</p>' +",
-      "      '</div>'",
+      "'<div {{*\\n' +",
+      "'  id: this.props.element_id\\n'+",
+      "'  className:\\n'+",
+      "'    \"something\": true\\n'+",
+      "'    \"something-else\": true\\n'+",
+      "'  src: this.props.element_src\\n'+",
+      "'  data-something: \"something\"\\n'+",
+      "'  data-something-else:\\n'+",
+      "'    \"something\": true\\n'+",
+      "'    \"something-else\": true\\n'+",
+      "'*}}>'+",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
       "    );",
       "  }",
       "});"
     ].join('\n');
 
     var result = transform(code);
-    var rendered = render(result, { something: 'smile', hello: 'other' });
-    expect(rendered.mustache).toEqual(rendered.react);
+    var rendered = render(result, { element_id: 'iddd', element_src: 'srcc' });
+    var expected = '<div id="iddd" class=" something something-else" src="srcc" data-something="something" data-something-else=" something something-else"><p>Hello</p></div>'
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
 });

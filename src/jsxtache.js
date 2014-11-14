@@ -2,19 +2,13 @@
 
 // @TODO REFACTOR! C0DE IZ RUFF.
 // @TODO gotta work on dev friendliness + error handling. compiliation failures aren't pretty.
-// @TODO fork esprima-fb and add in mustache signifier support so return statements dont have to be string based?
-//       esprima master cant handle xml <div></div>, esprima-fb can but cant handle string based {{mustache}} additions
 
 var esprima = require('esprima');
 var lodash = require('lodash');
 var tokenize = require('mustache').parse;
 var reactTools = require('react-tools');
 var chalk = require('chalk');
-
-var RGX = {
-  TRAILING_COMMA: /^\s*,/,
-  JSX_W_STR: /([^\S\n]*)\'\~\~JSX\~\~\'/
-};
+var utility = require('./utility');
 
 var MUSTACHE_TAGS = ['{{','}}'];
 var JSX_TAGS = ['{','}'];
@@ -90,7 +84,7 @@ function traverse(root) {
  *
  */
 function renderReplace(jsx, jsxRender) {
-  return jsx.replace(RGX.JSX_W_STR, jsxRender);
+  return jsx.replace(/([^\S\n]*)\'\~\~JSX\~\~\'/, jsxRender);
 }
 
 /**
@@ -169,14 +163,20 @@ function isJSXtacheKey(key) {
 /**
  *
  */
-function adjustIdentifier(identifier, signifier) {
+function adjustIdentifier(identifier, signifier, yaml) {
   if (identifier.charAt(0) === signifier) {
     identifier = identifier.slice(1);
   }
   if (identifier.charAt(identifier.length - 1) === signifier) {
     identifier = identifier.substring(0, identifier.length - 1);
   }
-  return identifier.replace(/(^\s*|\s*$)/g, '');
+  if (yaml) {
+    identifier = identifier.split(/\n/);
+    identifier = lodash.reject(identifier, function(n) { return !n; });
+    return identifier;
+  } else {
+    return identifier.replace(/(^\s*|\s*$)/g, '');
+  }
 }
 
 /**
@@ -202,120 +202,176 @@ function formatJSXtacheExpressionObject(expression, compileForMustache) {
   var str = '';
   for (var prop in expression) {
     if (!!expression.hasOwnProperty(prop)) {
-      str += _formatJSXtacheExpressionObject(prop, expression[prop], compileForMustache);
+      str += formatJSXtacheExpression(prop, expression[prop], compileForMustache);
     }
   }
   return str;
 }
 
 /**
- * @TODO not sure why i pulled into new func
+ *
  */
-function _formatJSXtacheExpressionObject(key, value, compileForMustache) {
+function formatJSXtacheExpression(key, value, compileForMustache) {
+  key = getJSXtacheSubExpressionArray(key);
   var str = '';
-  if (!!compileForMustache) {
-    if (typeof value === 'boolean') {
-      if (!!value) {
-        str += (' ' + key);
+  value = utility.trim(value);
+  if (value !== 'false') {
+    if (!!compileForMustache) {
+      var inverse = value.split(/\!/g).length % 2 === 0;
+      value = replacePropsAndState(value);
+      var fullKey = formatJSXtacheSubExpressionForMustache(key);
+      if (value === 'true') {
+        fullKey = ' ' + fullKey;
+      } else {
+        fullKey = (MUSTACHE_TAGS[0] + (!!inverse ? '^' : '#') + value + MUSTACHE_TAGS[1] + ' ' + fullKey + MUSTACHE_TAGS[0] + '/' + value + MUSTACHE_TAGS[1]);
       }
+      str += fullKey;
     } else {
-      // @TODO yikes. pretty hacky way to determine truthy on a string
-      var inverse = value.split('!').length % 2 === 0;
-      // console.log(value)
-      var v = replacePropsAndState(value);
-      str += (MUSTACHE_TAGS[0] + (!!inverse ? '^' : '#') + v + MUSTACHE_TAGS[1] + ' ' + key + MUSTACHE_TAGS[0] + '/' + v + MUSTACHE_TAGS[1]);
-      // console.log(str)
+      var fullKey = formatJSXtacheSubExpressionForJSX(key);
+      if (value === 'true') {
+        fullKey = '(" " + ' + fullKey + ')';
+      } else {
+        fullKey = '(!!' +  value + ' ? (" " + ' + fullKey + ') : \"\")';
+      }
+      str += fullKey;
     }
-  } else {
-    // @TODO handle bool better. !!true not needed obviously
-    str += ' + (!!' +  value + ' ? \" ' + key + '\" : \"\")';
   }
-  // console.log(str)
   return str;
 }
 
 /**
  *
  */
-function formatJSXtacheExpression(expression, compileForMustache) {
-  var str = '';
-  // console.log('origExp: ', expression);
-  expression = expression.replace(/^\{/, '').replace(/\}$/, '');
-  // @TODO pretty hacky string handling, improve somehow?
-  var expressionIsString = !!~['\'', '"'].indexOf(expression.charAt(0));
-
-  // console.log('ISmustache: ',compileForMustache)
-  if (!!compileForMustache) {
-    if (!!expressionIsString) {
-      str = expression.replace(/\"/g, '').replace(/\'/g, '');
-    } else {
-      var v = replacePropsAndState(expression);
-      str = MUSTACHE_TAGS[0] + v + MUSTACHE_TAGS[1];
-    }
-  } else {
-    str = expression;
-  }
-
-  // console.log(str)
-  return str;
+function getJSXtacheSubExpressionArray(key) {
+  key = utility.trim(key);
+  key = key.split('+');
+  return key.map(function (subKey) {
+    return utility.trim(subKey);
+  });
 }
 
 /**
  *
+ */
+function formatJSXtacheSubExpressionForMustache(key) {
+  var fullKey = '';
+  key.forEach(function(subKey) {
+    if (utility.startsWithQuotes(subKey)) {
+      subKey = utility.removeQuotes(subKey);
+    } else {
+      subKey = MUSTACHE_TAGS[0] + replacePropsAndState(subKey) + MUSTACHE_TAGS[1];
+    }
+    fullKey += subKey;
+  });
+  return fullKey;
+}
+
+/**
+ *
+ */
+function formatJSXtacheSubExpressionForJSX(key) {
+  var fullKey = '';
+  key.forEach(function(subKey) {
+    if (!utility.startsWithQuotes(subKey)) {
+      var joined = '';
+      var safeKey = subKey.split('.').map(function(el) {
+        joined += (joined === '' ? '' : '.');
+        joined += el;
+        return '!!' + joined;
+      }).join('&&');
+      subKey = ' \'\' + ((' + safeKey + ') ? (' + subKey + ') : (\'\'))';
+    }
+    if (fullKey !== '') {
+      fullKey += '+';
+    }
+    fullKey += subKey;
+  });
+  return fullKey;
+}
+
+/**
+ * yamlish
  */
 function handleJSXtache(baseExpression, compileForMustache) {
-  // console.log('base: ',baseExpression)
-  baseExpression = adjustIdentifier(baseExpression, JSXTACHE_SIGNIFIER);
-  var expressions = baseExpression.split(/\}\s/).map(function(el) {
-    // remove whitespace, turn into array, add back in }
-    // console.log('el:',el.replace(/^\s*/, '').replace(/\}?$/, '}'))
-    return !!el ? el.replace(/^\s*/, '').replace(/\}?$/, '}') : null;
-  });
-  expressions = lodash.reject(expressions, function (el) {
-    return !el;
-  });
-
+  var rawExpressions = adjustIdentifier(baseExpression, JSXTACHE_SIGNIFIER, true);
+  var expressions = convertRawExpressionsToExpressions(rawExpressions);
   var result = '';
-  expressions.forEach(function(expression) {
-    var parts = expression.split(/\s*=\s*/);
-    var identifier = parts[0];
-
-    switch (identifier) {
-    case 'class':
-    case 'className':
-      identifier = !!compileForMustache ? 'class' : 'className';
-      break;
-    default:
-      // as is
+  for (var expression in expressions) {
+    if (!!expressions.hasOwnProperty(expression)) {
+      var identifier = '';
+      switch (expression) {
+      case 'class':
+      case 'className':
+        identifier = !!compileForMustache ? 'class' : 'className';
+        break;
+      default:
+        identifier = expression;
+      }
+      var combined = '';
+      if (lodash.isArray(expressions[expression])) {
+        expressions[expression].forEach(function(subExpression) {
+          subExpression = formatJSXtacheExpressionObject(subExpression, compileForMustache);
+          if (combined !== '' && subExpression !== '' && !compileForMustache) {
+            combined += '+';
+          }
+          combined += subExpression;
+        });
+      } else if (lodash.isString(expressions[expression])) {
+        var subExpression = getJSXtacheSubExpressionArray(expressions[expression]);
+        if (!!compileForMustache) {
+          combined = formatJSXtacheSubExpressionForMustache(subExpression);
+        } else {
+          combined = formatJSXtacheSubExpressionForJSX(subExpression);
+        }
+      }
+      var space = result === '' ? '' : ' ';
+      var formatted = !!compileForMustache ? '\"' + combined + '\"' : '{' + combined + '}';
+      result += (space + identifier + '=' + formatted);
     }
+  }
 
-    // @TODO do this differently? lets us assign strings or concat object props into strings
-    var formatted = '';
-    try {
-      expression = JSON.parse(parts[1]);
-      expression = formatJSXtacheExpressionObject(expression, compileForMustache);
-      formatted = !!compileForMustache ? '\"' + expression + '\"' : '{\"\"' + expression + '}';
-    } catch (e) {
-      // console.log('parts: ',parts)
-      expression = parts[1];
-      expression = formatJSXtacheExpression(expression, compileForMustache);
-      formatted = !!compileForMustache ? '\"' + expression + '\"' : '{' + expression + '}';
-    }
-
-    // console.log('expression: ', expression);
-    // console.log('identifier: ', identifier);
-    // console.log('formatted: ', formatted);
-
-    var space = result === '' ? '' : ' ';
-    result += (space + identifier + '=' + formatted);
-  });
   return result;
 }
 
 /**
  *
  */
+function convertRawExpressionsToExpressions(rawExpressions) {
+  var expressions = {};
+  var previousWhiteSpace = null;
+  var parentKey = null;
+
+  rawExpressions.forEach(function(rawExpression) {
+    var whiteSpace = rawExpression.match(/^(\s*)/)[0].length;
+    var nest = !!previousWhiteSpace && whiteSpace > previousWhiteSpace;
+    var breakNest = !!previousWhiteSpace && whiteSpace < previousWhiteSpace;
+    if (!!breakNest) {
+      parentKey = null;
+    }
+    var parts = rawExpression.split(':');
+    var key = utility.trim(parts[0]);
+    var value = !!parts[1] ? parts[1] : [];
+    if (!!parentKey) {
+      var obj = {};
+      obj[key] = value;
+      expressions[parentKey].push(obj);
+    } else {
+      expressions[key] = value;
+    }
+    previousWhiteSpace = whiteSpace;
+    if (lodash.isArray(value)) {
+      parentKey = key;
+    }
+  });
+
+  return expressions;
+}
+
+/**
+ *
+ */
 function handleJSXUnsafe(value) {
+  // @TODO in order for markup to be the same, wed have to create span tag for mustache as well.
   // @TODO not sure best way of handling {{{raw}}} since react handles in pretty different way.
   return '<span dangerouslySetInnerHTML=' + MUSTACHE_TAGS[0] + '__html: ' + value + MUSTACHE_TAGS[1] + ' />';
 }
@@ -335,7 +391,7 @@ function handleMustacheBlock(value, children, inverse) {
 }
 
 /**
- * @TODO improve?
+ * @TODO improve? pull into an injected function in each file etc
  * this is a bit crazy looking. but mustache blocks do a lot + need to account for arrays, objects, truthy / falsy
  * accomplishes inline in JSX expression {} without needing a var (which would need additional buffer to inject outside of return)
  * or unintentionally rewriting props. also does cross browser isArray / isObject checks without lodash / underscore
@@ -454,6 +510,7 @@ function crossCompile(mustache, jsx, tokens, scope, key, removePropsState) {
     case 'name':
       if (!isJSXKey(val) && (!!mustache || mustache === '')) {
         if (!!isJSXtacheKey(val)) {
+          // console.log(val)
           mustache += handleJSXtache(val, true);
         } else {
           mustache += handleMustacheName(val);
@@ -561,7 +618,7 @@ function transform(jsx, jsxtache, mustache) {
   if (!!list.mustacheReturnBlock) {
     mustache = jsx.substring(list.mustacheReturnBlock[0], list.mustacheReturnBlock[1]);
     mustache = eval(mustache);
-    jsx = jsx.substring(0, list.mustache[0]) + jsx.substring(list.mustache[1]).replace(RGX.TRAILING_COMMA, '');
+    jsx = jsx.substring(0, list.mustache[0]) + jsx.substring(list.mustache[1]).replace(/^\s*,/, '');
     list = parse(jsx);
   }
 
