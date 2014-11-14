@@ -12,9 +12,9 @@ npm install -g jsxtache
 
 Because [React](http://facebook.github.io/react/) is awesome. But JS on the server is a tough argument. This dumbs down React to Mustache's level, so that it can cross-compile into both.
 
-######Does it take advantage of React's *smart* server side rendering?
+######Can I take advantage of React's *smart* server side rendering?
 
-No.
+Not yet. It will be able to by marking open / close tags with {{%o}}/{{%c}}, and building that in to your servers Mustache rendering engine [like this](https://github.com/ndreckshage/mustache.js/commit/825f673cf6317240ae92e07a852dc531985ae207).
 
 ######Syntax
 
@@ -37,24 +37,24 @@ module.exports = React.createClass({
 
 *Matching JSXtache (.jsx.mustache)*
 ```mustache
-<div {{* id = {'element-id'} *}}>
+<div {{** id = {'element-id'} **}}>
   {{> partials/hello}}
   {{#this.props.people}}
-    <div {{` key `}}>
+    <div {{** key **}}>
       <p {{*
-        id = {this.props.element_id}
-        className = {
-          "something": true,
-          "something-else": "this.props.b_show_class"
-        }
+        id: element_id + "_id"
+        className:
+          "something": true
+          "something-else": b_show_class
       *}}>{{name}}</p>
     </div>
   {{/this.props.people}}
   {{^this.props.people}}
-    <span {{` onHover = {this._onHover} `}}>No People</span>
+    <span {{** onHover = {this._onHover} **}}>No People</span>
   {{/this.props.people}}
-  <span {{` onClick = {this._onClick} `}}>{{this.props.testing}}</span>
+  <span {{** onClick = {this._onClick} **}}>{{this.props.testing}}</span>
 </div>
+
 ```
 
 ######Project Structure
@@ -89,6 +89,12 @@ jsxtache <jsxtache dir> <options...>
   --mustache (Default: null)
   --jsx (Default: null)
   --js (Default: null)
+  --mustache-out-ext (Default: .mustache)
+  --jsx-out-ext (Default: .jsx)
+  --js-out-ext (Default: .js)
+  --mustache-filename-append (Default: "")
+  --jsx-filename-append (Default: "")
+  --js-filename-append (Default: "")
 jsxtache help
 jsxtache version
 ```
