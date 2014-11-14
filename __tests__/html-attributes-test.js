@@ -12,7 +12,32 @@ describe("jsxstache handles html attributes", function() {
       "  render: function() {",
       "    return (",
       "'<div {{*' +",
-      "'  className:\\n'+",
+      "'  class:\\n'+",
+      "'    \"something\": this.props.something\\n'+",
+      "'    \"another\": true\\n'+",
+      "'*}}>' +",
+      "  '<p>Hello</p>' +",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, { something: true });
+    var expected = '<div class=" something another"><p>Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
+
+  it('separates element from attribute if someone forgets', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div{{*' +",
+      "'  class:\\n'+",
       "'    \"something\": this.props.something\\n'+",
       "'    \"another\": true\\n'+",
       "'*}}>' +",
@@ -37,7 +62,7 @@ describe("jsxstache handles html attributes", function() {
       "  render: function() {",
       "    return (",
       "'<div {{*\\n' +",
-      "'  className: this.props.something + \"-more\"\\n'+",
+      "'  class: this.props.something + \"-more\"\\n'+",
       "'*}}>' +",
       "  '<p>Hello</p>' +",
       "'</div>'",
@@ -61,7 +86,7 @@ describe("jsxstache handles html attributes", function() {
       "    return (",
       "'<div>' +",
       "'  <p {{*      \\n' +",
-      "'    className:\\n'+",
+      "'    class:\\n'+",
       "'      \"massachusetts\": this.props.something\\n'+",
       "'      \"another\": true\\n'+",
       "'  *}}>Hello</p>' +",
@@ -85,7 +110,7 @@ describe("jsxstache handles html attributes", function() {
       "  render: function() {",
       "    return (",
       "'<div {{*' +",
-      "'  className:\\n'+",
+      "'  class:\\n'+",
       "'    \"something\": this.props.something\\n'+",
       "'    \\'another\\': true\\n'+",
       "'*}}>' +",
@@ -111,7 +136,7 @@ describe("jsxstache handles html attributes", function() {
       "  render: function() {",
       "    return (",
       "'<div {{*' +",
-      "'  className:\\n'+",
+      "'  class:\\n'+",
       "'    \"something\": !!!!!!!this.props.something\\n'+",
       "'    \"something-else\": !!this.props.hello\\n'+",
       "'    \"hello\": !this.props.hello\\n'+",
@@ -172,7 +197,7 @@ describe("jsxstache handles html attributes", function() {
       "    return (",
       "'<div {{*\\n' +",
       "'  id: this.props.element_id\\n'+",
-      "'  className:\\n'+",
+      "'  class:\\n'+",
       "'    \"something\": true\\n'+",
       "'    \"something-else\": true\\n'+",
       "'  src: this.props.element_src\\n'+",

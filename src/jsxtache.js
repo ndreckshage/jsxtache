@@ -9,11 +9,11 @@ var tokenize = require('mustache').parse;
 var reactTools = require('react-tools');
 var chalk = require('chalk');
 var utility = require('./utility');
+var isReactSpecific = require('./react-specific-signifiers');
 
 var MUSTACHE_TAGS = ['{{','}}'];
 var JSX_TAGS = ['{','}'];
 
-var JSX_SIGNIFIER = '**';
 var JSXTACHE_SIGNIFIER = '*';
 
 var requirePartials = [];
@@ -146,15 +146,10 @@ function handleJSXName(value, scope, removePropsState) {
 /**
  *
  */
-function isJSXKey(key) {
-  return !!key && key.slice(0,2) === JSX_SIGNIFIER;
-}
-
-/**
- *
- */
 function isJSXtacheKey(key) {
-  return !!key && key.slice(0,1) === JSXTACHE_SIGNIFIER && key.slice(0,2) !== JSX_SIGNIFIER;
+  return !!key &&
+      key.charAt(0) === JSXTACHE_SIGNIFIER &&
+      key.charAt(key.length - 1) === JSXTACHE_SIGNIFIER;
 }
 
 /**
@@ -176,22 +171,6 @@ function adjustIdentifier(identifier, signifier, yaml) {
   } else {
     return identifier.replace(/(^\s*|\s*$)/g, '');
   }
-}
-
-/**
- *
- */
-function handleJSXKey(identifier) {
-  identifier = adjustIdentifier(identifier, JSX_SIGNIFIER);
-  var expression = '';
-  switch (identifier) {
-  case 'key':
-    expression = identifier + '=' + JSX_TAGS[0] + 'ndx' + JSX_TAGS[1];
-    break;
-  default:
-    expression = identifier;
-  }
-  return ' ' + expression;
 }
 
 /**
@@ -297,39 +276,74 @@ function handleJSXtache(baseExpression, compileForMustache) {
   var result = '';
   for (var expression in expressions) {
     if (!!expressions.hasOwnProperty(expression)) {
-      var identifier = '';
-      switch (expression) {
-      case 'class':
-      case 'className':
-        identifier = !!compileForMustache ? 'class' : 'className';
-        break;
-      default:
-        identifier = expression;
-      }
-      var combined = '';
-      if (lodash.isArray(expressions[expression])) {
-        expressions[expression].forEach(function(subExpression) {
-          subExpression = formatJSXtacheExpressionObject(subExpression, compileForMustache);
-          if (combined !== '' && subExpression !== '' && !compileForMustache) {
-            combined += '+';
-          }
-          combined += subExpression;
-        });
-      } else if (lodash.isString(expressions[expression])) {
-        var subExpression = getJSXtacheSubExpressionArray(expressions[expression]);
-        if (!!compileForMustache) {
-          combined = formatJSXtacheSubExpressionForMustache(subExpression);
-        } else {
-          combined = formatJSXtacheSubExpressionForJSX(subExpression);
+      var formatted = '';
+      if (isReactSpecific(expression)) {
+        if (!compileForMustache) {
+          formatted = handleJSXSpecificKey(expression, expressions[expression]);
         }
+      } else {
+        formatted = handleJSXMustacheKey(expression, expressions[expression], compileForMustache);
       }
-      var space = result === '' ? '' : ' ';
-      var formatted = !!compileForMustache ? '\"' + combined + '\"' : '{' + combined + '}';
-      result += (space + identifier + '=' + formatted);
+
+      if (formatted !== '') {
+        var space = result === '' ? '' : ' ';
+        result += (space + formatted);
+      }
     }
   }
 
   return result;
+}
+
+/**
+ *
+ */
+function handleJSXSpecificKey(key, value) {
+  key = !!key ? utility.trim(key) : key;
+  value = !!value ? utility.trim(value) : value;
+  var formatted = '';
+  switch (key) {
+  case 'key':
+    formatted = key + '=' + JSX_TAGS[0] + 'ndx' + JSX_TAGS[1];
+    break;
+  default:
+    formatted = key + '=' + JSX_TAGS[0] + value + JSX_TAGS[1];
+  }
+  return formatted;
+}
+
+/**
+ *
+ */
+function handleJSXMustacheKey(key, value, compileForMustache) {
+  switch (key) {
+  case 'class':
+  case 'className':
+    key = !!compileForMustache ? 'class' : 'className';
+    break;
+  default:
+    // as is
+  }
+
+  var combined = '';
+  if (lodash.isArray(value)) {
+    value.forEach(function(subExpression) {
+      subExpression = formatJSXtacheExpressionObject(subExpression, compileForMustache);
+      if (combined !== '' && subExpression !== '' && !compileForMustache) {
+        combined += '+';
+      }
+      combined += subExpression;
+    });
+  } else if (lodash.isString(value)) {
+    var subExpression = getJSXtacheSubExpressionArray(value);
+    if (!!compileForMustache) {
+      combined = formatJSXtacheSubExpressionForMustache(subExpression);
+    } else {
+      combined = formatJSXtacheSubExpressionForJSX(subExpression);
+    }
+  }
+
+  return key + '=' + (!!compileForMustache ? ('\"' + combined + '\"') : ('{' + combined + '}'));
 }
 
 /**
@@ -419,8 +433,7 @@ function handleJSXBlock(value, children) {
   "      return (";
 
   if (!!children && !!lodash.isArray(children)) {
-    // console.log('jsxblock child')
-    str = crossCompile(null, str, children, 'el', 'ndx', true).jsx;
+    str = crossCompile(null, str, children, 'el', true).jsx;
   }
 
   str += ");" +
@@ -488,9 +501,8 @@ function handleJSXPartial(path, scope, additionalProps) {
 /**
  * @TODO figure out params / options that make the most sense
  * i think (tokens:array, type:string, options:object)
- * @TODO umm why did i take key param and then declare as var
  */
-function crossCompile(mustache, jsx, tokens, scope, key, removePropsState) {
+function crossCompile(mustache, jsx, tokens, scope, removePropsState) {
   for (var i = 0, l = tokens.length; i < l; i++) {
     var token = tokens[i], key = token[0], val = token[1], children = token[4];
 
@@ -507,18 +519,22 @@ function crossCompile(mustache, jsx, tokens, scope, key, removePropsState) {
       }
       break;
     case 'name':
-      if (!isJSXKey(val) && (!!mustache || mustache === '')) {
+      if (!!mustache || mustache === '') {
         if (!!isJSXtacheKey(val)) {
-          // console.log(val)
-          mustache += handleJSXtache(val, true);
+          var formatted = handleJSXtache(val, true);
+          if (!!formatted && mustache.charAt(mustache.length -1) !== ' ') {
+            mustache += ' ';
+          }
+          mustache += formatted;
         } else {
           mustache += handleMustacheName(val);
         }
       }
       if (!!jsx || jsx === '') {
-        if (!!isJSXKey(val)) {
-          jsx += handleJSXKey(val);
-        } else if (!!isJSXtacheKey(val)) {
+        if (!!isJSXtacheKey(val)) {
+          if (jsx.charAt(jsx.length - 1) !== ' ') {
+            jsx += ' ';
+          }
           jsx += handleJSXtache(val, false);
         } else {
           jsx += handleJSXName(val, scope, removePropsState);

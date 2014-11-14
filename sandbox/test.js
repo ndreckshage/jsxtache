@@ -22,7 +22,8 @@ var jsx = fs.readFileSync('./components/main.jsx', 'utf-8');
 var jsxtache = fs.readFileSync('./components/main.jsx.mustache', 'utf-8');
 
 var result = transform(jsx, jsxtache, null);
-console.log(result);
+// console.log(result.mustache);
+// console.log(result.jsx)
 
-// var rendered = render(result, { something: 'goodbye', hello: true })
-// console.log(rendered)
+var rendered = render(result, { something: 'goodbye', hello: true })
+console.log(rendered)
