@@ -99,10 +99,10 @@ function handleMustacheName(value) {
 }
 
 /**
- *
+ * @TODO need to think what to do with unsafe tag better. this is to match JSX.
  */
 function handleMustacheUnsafe(value) {
-  return MUSTACHE_TAGS[0] + JSX_TAGS[0] + replacePropsAndState(value) + JSX_TAGS[1] + MUSTACHE_TAGS[1];
+  return '<span>' + MUSTACHE_TAGS[0] + JSX_TAGS[0] + replacePropsAndState(value) + JSX_TAGS[1] + MUSTACHE_TAGS[1] + '</span>';
 }
 
 /**
