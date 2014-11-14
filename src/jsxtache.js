@@ -13,6 +13,7 @@ var isReactSpecific = require('./react-specific-signifiers');
 
 var MUSTACHE_TAGS = ['{{','}}'];
 var JSX_TAGS = ['{','}'];
+var JSX_SPREAD = '...';
 
 var JSXTACHE_SIGNIFIER = '*';
 
@@ -491,11 +492,13 @@ function handleJSXPartial(path, scope, additionalProps) {
     return part.charAt(0).toUpperCase() + part.slice(1);
   }).join('');
   requirePartials.push({ varName: varName, path: path});
-  // @TODO need to be able to pass state etc down as well
-  if (!scope) {
-    scope = 'this.props';
-  }
-  return '<' + varName + ' ' + JSX_TAGS[0] +  '...' + scope + JSX_TAGS[1] + ' ' + additionalProps + ' />';
+  var childProps = '';
+  ['this.props', 'this.state', scope].forEach(function(context) {
+    if (!!context) {
+      childProps += (' ' + JSX_TAGS[0] + JSX_SPREAD + context + JSX_TAGS[1]);
+    }
+  });
+  return '<' + varName + childProps + ' />';
 }
 
 /**

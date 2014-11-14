@@ -81,9 +81,9 @@ describe('jsxtache handles partials', function() {
       "  render: function() {",
       "    return (",
       "      '<div>'+",
-      "        '{{> partial_a something = {this.state.something} }}'+",
+      "        '{{> partial_a}}'+",
       "        '{{#this.props.arr}}'+",
-      "          '{{> partial_a count={this.state.count}   something = {this.state.something} }}'+",
+      "          '{{> partial_a}}'+",
       "        '{{/this.props.arr}}'+",
       "      '</div>'",
       "    );",
@@ -108,10 +108,14 @@ describe('jsxtache handles partials', function() {
     var result = transform(code);
     var partial = transform(codePartial);
 
+    expect(result.jsx).toMatch(/\{\.\.\.this\.props\}.*\{\.\.\.this\.state\}/);
+
     jest.setMock('partial_a', eval(partial.js));
     var mustachePartials = { 'partial_a': partial.mustache };
 
-    var rendered = render(result, { count: 7, something: 'Hello', arr: [{ name: 'One' }, { name: 'Two' }] }, mustachePartials);
-    expect(rendered.mustache).toEqual(rendered.react);
+    var rendered = render(result, { count: 7, something: 'Hello', arr: [{ name: 'One', count: 99 }, { name: 'Two', count: 77 }] }, mustachePartials);
+    var expected = '<div><p> - 7 - Hello</p><p>One - 99 - Hello</p><p>Two - 77 - Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
 });
