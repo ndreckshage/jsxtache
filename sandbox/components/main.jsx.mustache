@@ -1,18 +1,17 @@
-<div {{* id = {'element-id'} *}}>
+<div {{** id = {'element-id'} **}}>
   {{> partials/hello}}
   {{#this.props.people}}
-    <div {{` key `}}>
+    <div {{** key **}}>
       <p {{*
-        id = {this.props.element_id}
-        className = {
-          "something": true,
-          "something-else": "this.props.b_show_class"
-        }
+        id: element_id
+        className:
+          "something": true
+          "something-else": b_show_class
       *}}>{{name}}</p>
     </div>
   {{/this.props.people}}
   {{^this.props.people}}
-    <span {{` onHover = {this._onHover} `}}>No People</span>
+    <span {{** onHover = {this._onHover} **}}>No People</span>
   {{/this.props.people}}
-  <span {{` onClick = {this._onClick} `}}>{{this.props.testing}}</span>
+  <span {{** onClick = {this._onClick} **}}>{{this.props.testing}}</span>
 </div>

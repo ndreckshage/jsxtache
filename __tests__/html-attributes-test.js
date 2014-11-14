@@ -53,6 +53,31 @@ describe("jsxstache handles html attributes", function() {
     expect(rendered.react).toEqual(expected);
   });
 
+  it('handles indented elements + extra whitespace', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div>' +",
+      "'  <p {{*      \\n' +",
+      "'    className:\\n'+",
+      "'      \"massachusetts\": this.props.something\\n'+",
+      "'      \"another\": true\\n'+",
+      "'  *}}>Hello</p>' +",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, { something: true });
+    var expected = '<div>  <p class=" massachusetts another">Hello</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
+
   it('handles css classes w single/dbl quotes', function() {
     var code = [
       "var React = require('react');",

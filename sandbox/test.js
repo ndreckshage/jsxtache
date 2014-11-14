@@ -18,14 +18,11 @@ function render(result, data) {
   }
 }
 
-var mainJSX = fs.readFileSync('./components/main.jsx', 'utf-8');
-var mainMUSTACHE = fs.readFileSync('./components/main.mustache', 'utf-8');
+var jsx = fs.readFileSync('./components/main.jsx', 'utf-8');
+var jsxtache = fs.readFileSync('./components/main.jsx.mustache', 'utf-8');
 
-console.log(mainJSX, mainMUSTACHE);
+var result = transform(jsx, jsxtache, null);
+console.log(result);
 
-// var result = transform(code);
-// console.log(result);
 // var rendered = render(result, { something: 'goodbye', hello: true })
-
-// console.log('\n\n')
 // console.log(rendered)

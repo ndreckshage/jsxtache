@@ -13,10 +13,7 @@ var utility = require('./utility');
 var MUSTACHE_TAGS = ['{{','}}'];
 var JSX_TAGS = ['{','}'];
 
-// for JSX only -- events etc
-var JSX_SIGNIFIER = '`';
-// for difficult jsx/mustache conversions like CSS classes + html tag attr
-// @TODO on second thought, can probably live w one signifier. just backtick/*, and branch out based on identifier name
+var JSX_SIGNIFIER = '**';
 var JSXTACHE_SIGNIFIER = '*';
 
 var requirePartials = [];
@@ -150,29 +147,31 @@ function handleJSXName(value, scope, removePropsState) {
  *
  */
 function isJSXKey(key) {
-  return !!key && key.charAt(0) === JSX_SIGNIFIER;
+  return !!key && key.slice(0,2) === JSX_SIGNIFIER;
 }
 
 /**
  *
  */
 function isJSXtacheKey(key) {
-  return !!key && key.charAt(0) === JSXTACHE_SIGNIFIER;
+  return !!key && key.slice(0,1) === JSXTACHE_SIGNIFIER && key.slice(0,2) !== JSX_SIGNIFIER;
 }
 
 /**
  *
  */
 function adjustIdentifier(identifier, signifier, yaml) {
-  if (identifier.charAt(0) === signifier) {
-    identifier = identifier.slice(1);
+  if (identifier.slice(0, signifier.length) === signifier) {
+    identifier = identifier.slice(signifier.length);
   }
-  if (identifier.charAt(identifier.length - 1) === signifier) {
-    identifier = identifier.substring(0, identifier.length - 1);
+  if (identifier.slice(identifier.length - signifier.length) === signifier) {
+    identifier = identifier.substring(0, identifier.length - signifier.length);
   }
   if (yaml) {
     identifier = identifier.split(/\n/);
-    identifier = lodash.reject(identifier, function(n) { return !n; });
+    identifier = lodash.reject(identifier, function(n) {
+      return !n.match(/[^\s\\]/);
+    });
     return identifier;
   } else {
     return identifier.replace(/(^\s*|\s*$)/g, '');
