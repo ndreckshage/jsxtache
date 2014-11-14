@@ -156,9 +156,9 @@ describe('jsxtache converts variables', function() {
       "module.exports = React.createClass({",
       "  render: function() {",
       "    return (",
-      "      '<div>'+",
-      "        '<p>Hello {{{this.props.name}}}</p>'+",
-      "      '</div>'",
+      "'<div>'+",
+      "  '<p>Hello {{{this.props.name}}}</p>'+",
+      "'</div>'",
       "    );",
       "  }",
       "});"
@@ -173,24 +173,26 @@ describe('jsxtache converts variables', function() {
     expect(rendered.react).toEqual(expected);
   });
 
-  // it('handles unsafe variables (ampersand)', function() {
-  //   var code = [
-  //     "var React = require('react');",
-  //     "module.exports = React.createClass({",
-  //     "  render: function() {",
-  //     "    return (",
-  //     "      '<div>'+",
-  //     "        '<p>Hello {{&this.props.name}}</p>'+",
-  //     "      '</div>'",
-  //     "    );",
-  //     "  }",
-  //     "});"
-  //   ].join('\n');
-  //
-  //   var result = transform(code);
-  //   expect(result).toEqual(expected);
-  //   var rendered = render(result, { name: '&middot;' });
-  //   expect(rendered.mustache).toEqual("<div><p>Hello &middot;</p></div>");
-  //   expect(rendered.react).toEqual("<div><p>Hello <span>&middot;</span></p></div>");
-  // });
+  it('handles unsafe variables (ampersand)', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div>'+",
+      "  '<p>Hello {{&this.props.name}}</p>'+",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    expect(result.jsx).toMatch(/dangerouslySetInnerHTML\=\{\{\_\_html\:/);
+    expect(result.mustache).toMatch(/\{\{\{.*\}\}\}/);
+    var rendered = render(result, { name: '&middot;' });
+    var expected = "<div><p>Hello <span>&middot;</span></p></div>";
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
 });
