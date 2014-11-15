@@ -30,6 +30,8 @@ var mustacheFNAppend = args['mustache-filename-append'] || '';
 var jsxFNAppend = args['jsx-filename-append'] || '';
 var jsFNAppend = args['js-filename-append'] || '';
 
+var prefixMustachePartial = args['mustache-partial-prefix'] || '';
+
 /**
  *
  */
@@ -150,7 +152,7 @@ function compile(group, name) {
     mustache = fs.readFileSync(group.mustache, 'utf-8');
   }
 
-  var compiled = transform(jsx, jsxtache, mustache);
+  var compiled = transform(jsx, jsxtache, mustache, prefixMustachePartial);
   write(compiled.mustache, mustacheDir + '/' + name + mustacheFNAppend + mustacheOutExtension);
   if (!!jsxDir) {
     write(compiled.jsx, jsxDir + '/' + name + jsxFNAppend + jsxOutExtension);

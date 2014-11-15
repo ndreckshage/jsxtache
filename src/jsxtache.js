@@ -15,6 +15,8 @@ var MUSTACHE_TAGS = ['{{','}}'];
 var JSX_TAGS = ['{','}'];
 var JSX_SPREAD = '...';
 
+var PREFIX_MUSTACHE_PARTIAL = '';
+
 var JSXTACHE_SIGNIFIER = '*';
 
 var requirePartials = [];
@@ -481,7 +483,7 @@ function transformJSXtache(jsxtache) {
  *
  */
 function handleMustachePartial(path) {
-  return MUSTACHE_TAGS[0] + '> ' + path + MUSTACHE_TAGS[1];
+  return MUSTACHE_TAGS[0] + '> ' + PREFIX_MUSTACHE_PARTIAL + path + MUSTACHE_TAGS[1];
 }
 
 /**
@@ -620,9 +622,13 @@ function parse(jsx) {
  *       inline always takes precedence
  * @TODO write tests
  */
-function transform(jsx, jsxtache, mustache) {
+function transform(jsx, jsxtache, mustache, prefixMustachePartial) {
   if (!jsx) {
     throw chalk.red('Cannot transform that which cannot be transformed.')
+  }
+
+  if (!!prefixMustachePartial) {
+    PREFIX_MUSTACHE_PARTIAL = prefixMustachePartial;
   }
 
   var list = parse(jsx);
