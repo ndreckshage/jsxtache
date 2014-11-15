@@ -14,7 +14,15 @@ Because [React](http://facebook.github.io/react/) is awesome. But JS on the serv
 
 ######Can I take advantage of React's *smart* server side rendering?
 
-Not yet. It will be able to by marking open / close tags with {{%o}}/{{%c}}, and building that in to your servers Mustache rendering engine [like this](https://github.com/ndreckshage/mustache.js/commit/825f673cf6317240ae92e07a852dc531985ae207).
+Not yet. Working on it.
+
+######Info...
+
+- Separates JS + template. Combined by convention.
+- Mustache-like syntax.
+- ```{{* *}}``` special signifier for 'JSXtache'.
+- YAML-like, white space significant attributes.
+- Handles partials + passes down ```{...this.props}``` and ```{...this.state}```
 
 ######Syntax
 
@@ -26,35 +34,53 @@ module.exports = React.createClass({
     return;
   },
   _onClick: function() {
-    alert(1);
+    // do something
   },
   _onHover: function() {
-    alert(2);
+    // do something
   }
 });
-
 ```
 
 *Matching JSXtache (.jsx.mustache)*
 ```mustache
-<div {{** id = {'element-id'} **}}>
-  {{> partials/hello}}
-  {{#this.props.people}}
-    <div {{** key **}}>
-      <p {{*
-        id: element_id + "_id"
-        className:
-          "something": true
-          "something-else": b_show_class
-      *}}>{{name}}</p>
+<div {{*
+  id: this.props.element_id
+  class:
+    "class-a": true
+    "class-b": this.props.b_show_class_b
+    "not-class-b": !this.props.b_show_class_b
+    this.props.class_c: this.props_b_show_class_c
+    "class-" this.props.class_d: this.props.b_show_class_d
+    "class-e class-f class-g": true
+  data-something: "something" + this.props.something + "-something"
+  onClick: this._onClick
+*}}>
+  {{> partials/partial_a}}
+  {{#this.props.arr}}
+    <div {{*
+      key: scoped_val_OR_true
+    *}}>
+      <div {{*
+        id: element_id
+        class: "arr-element"  
+      *}}>
+        <p>{{title}}</p>
+        {{> partials/partial_b}}
+      </div>
     </div>
-  {{/this.props.people}}
-  {{^this.props.people}}
-    <span {{** onHover = {this._onHover} **}}>No People</span>
-  {{/this.props.people}}
-  <span {{** onClick = {this._onClick} **}}>{{this.props.testing}}</span>
+  {{/this.props.arr}}
+  {{^this.props.arr}}
+    <span {{*
+      onDoubleClick: this._onDoubleClick
+    *}}>Nothing in Arr</span>
+  {{/this.props.arr}}
+  <span {{*
+    onClick: this._onClick
+  *}}>
+    {{this.props.something}}
+  </span>
 </div>
-
 ```
 
 ######Project Structure
@@ -63,11 +89,11 @@ There are a few options for coordinating JSX / JSXtache. JSXtache syntax can be 
 
 Manage Duplication:
 - .jsx file; render + mustache method; inline jsx + mustache
-- .jsx file + .mustache file; inline jsx, implicit mustache
+- .jsx file + .mustache file; inline jsx; mustache by convention
 
 JSXtache syntax:
 - .jsx file -- render method -- inline jsxtache
-- .jsx file + .jsx.mustache file; implicit jsxtache
+- .jsx file + .jsx.mustache file; jsxtache by convention
 
 *Example*
 ```
