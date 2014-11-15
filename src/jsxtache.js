@@ -16,6 +16,7 @@ var JSX_TAGS = ['{','}'];
 var JSX_SPREAD = '...';
 
 var JSXTACHE_SIGNIFIER = '*';
+var SMART_SERVER_SIDE_RENDER_SIGNIFIER = '%';
 
 var requirePartials = [];
 
@@ -521,26 +522,34 @@ function crossCompile(mustache, jsx, tokens, scope, removePropsState) {
         jsx += val;
       }
       break;
+    // @TODO would be nice to just fork mustache and split these own in a legit way. then could also hanld sssr
     case 'name':
-      if (!!mustache || mustache === '') {
-        if (!!isJSXtacheKey(val)) {
-          var formatted = handleJSXtache(val, true);
-          if (!!formatted && mustache.charAt(mustache.length -1) !== ' ') {
-            mustache += ' ';
-          }
-          mustache += formatted;
-        } else {
-          mustache += handleMustacheName(val);
+      if (val.charAt(0) === SMART_SERVER_SIDE_RENDER_SIGNIFIER) {
+        if (!!mustache || mustache === '') {
+          mustache += (MUSTACHE_TAGS[0] + val + MUSTACHE_TAGS[1]);
         }
-      }
-      if (!!jsx || jsx === '') {
-        if (!!isJSXtacheKey(val)) {
-          if (jsx.charAt(jsx.length - 1) !== ' ') {
-            jsx += ' ';
+      } else {
+        if (!!mustache || mustache === '') {
+          if (!!isJSXtacheKey(val)) {
+            var formatted = handleJSXtache(val, true);
+            if (!!formatted && mustache.charAt(mustache.length -1) !== ' ') {
+              mustache += ' ';
+            }
+            mustache += formatted;
+          } else {
+            mustache += handleMustacheName(val);
           }
-          jsx += handleJSXtache(val, false);
-        } else {
-          jsx += handleJSXName(val, scope, removePropsState);
+        }
+
+        if (!!jsx || jsx === '') {
+          if (!!isJSXtacheKey(val)) {
+            if (jsx.charAt(jsx.length - 1) !== ' ') {
+              jsx += ' ';
+            }
+            jsx += handleJSXtache(val, false);
+          } else {
+            jsx += handleJSXName(val, scope, removePropsState);
+          }
         }
       }
       break;
@@ -568,9 +577,6 @@ function crossCompile(mustache, jsx, tokens, scope, removePropsState) {
         jsx += handleJSXInverse(val, children);
       }
       break;
-    case '!':
-      // handle comments. well, ignore comments.
-      break;
     case '>':
       var parts = val.split(' ');
       parts = lodash.reject(parts, function (el) {
@@ -585,6 +591,9 @@ function crossCompile(mustache, jsx, tokens, scope, removePropsState) {
       if (!!jsx || jsx === '') {
         jsx += handleJSXPartial(partial, scope, additionalProps);
       }
+      break;
+    case '!':
+      // handle comments. well, ignore comments.
     }
   }
 
