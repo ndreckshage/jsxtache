@@ -302,14 +302,14 @@ function handleJSXtache(baseExpression, compileForMustache) {
 function handleJSXSpecificKey(key, value) {
   key = !!key ? utility.trim(key) : key;
   value = !!value ? utility.trim(value) : value;
-  var formatted = '';
-  switch (key) {
-  case 'key':
-    formatted = key + '=' + JSX_TAGS[0] + 'ndx' + JSX_TAGS[1];
-    break;
-  default:
-    formatted = key + '=' + JSX_TAGS[0] + value + JSX_TAGS[1];
+  if (key === 'key') {
+    if (value === 'true') {
+      value = 'ndx';
+    } else {
+      value = 'scope.' + value;
+    }
   }
+  var formatted = key + '=' + JSX_TAGS[0] + value + JSX_TAGS[1];
   return formatted;
 }
 
@@ -417,8 +417,8 @@ function handleMustacheBlock(value, children, inverse) {
  *   v = this.props.something,
  *   toString.call(v) === '[object Object]' ? (v = [v]) : (null),
  *   toString.call(v) === '[object Array]' ? (
- *     v.map(function(el, ndx) {
- *       return <p>{el.name}</p>;
+ *     v.map(function(scope, ndx) {
+ *       return <p key={ndx}>{scope.name}</p>;
  *     })
  *   ) : (
  *     <p>{name}</p>
@@ -430,11 +430,11 @@ function handleJSXBlock(value, children) {
   "  v = " + value + "," +
   "  toString.call(v) === \"[object Object]\" ? (v = [v]) : (null)," +
   "  toString.call(v) === \"[object Array]\" ? (" +
-  "    v.map(function(el, ndx) {" +
+  "    v.map(function(scope, ndx) {" +
   "      return (";
 
   if (!!children && !!lodash.isArray(children)) {
-    str = crossCompile(null, str, children, 'el', true).jsx;
+    str = crossCompile(null, str, children, 'scope', true).jsx;
   }
 
   str += ");" +
@@ -670,7 +670,7 @@ function transform(jsx, jsxtache, mustache) {
     throw chalk.red('JSX must have render method with a return statement.')
   }
 
-  compiled.mustache = mustache;
+  compiled.mustache = mustache.replace(/\n/g, '');
   compiled.jsx = jsx;
   compiled.js = reactTools.transform(compiled.jsx);
   return compiled;

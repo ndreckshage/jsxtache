@@ -43,7 +43,7 @@ describe('jsxtache converts sections', function() {
         "module.exports = React.createClass({",
         "  render: function() {",
         "    return (",
-        '<div>{!!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(el, ndx) {      return (<p>Hello.</p>);    }.bind(this))  ) : (<p>Hello.</p>  )) : (null)}</div>',
+        '<div>{!!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(scope, ndx) {      return (<p>Hello.</p>);    }.bind(this))  ) : (<p>Hello.</p>  )) : (null)}</div>',
         "    );",
         "  }",
         "});"
@@ -53,7 +53,7 @@ describe('jsxtache converts sections', function() {
         "module.exports = React.createClass({",
         "  render: function() {",
         "    return (",
-        '<div>{!!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(el, ndx) {      return (<p>Hello {!!(!!el && !!el.name) ? (el.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)))}.</p>);    }.bind(this))  ) : (<p>Hello {!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null))}.</p>  )) : (null)}</div>',
+        '<div>{!!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(scope, ndx) {      return (<p>Hello {!!(!!scope && !!scope.name) ? (scope.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)))}.</p>);    }.bind(this))  ) : (<p>Hello {!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null))}.</p>  )) : (null)}</div>',
         "    );",
         "  }",
         "});"
@@ -65,7 +65,7 @@ describe('jsxtache converts sections', function() {
         "module.exports = React.createClass({displayName: 'exports',",
         "  render: function() {",
         "    return (",
-        'React.createElement("div", null, !!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(el, ndx) {      return (React.createElement("p", null, "Hello."));    }.bind(this))  ) : (React.createElement("p", null, "Hello.")  )) : (null))',
+        'React.createElement("div", null, !!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(scope, ndx) {      return (React.createElement("p", null, "Hello."));    }.bind(this))  ) : (React.createElement("p", null, "Hello.")  )) : (null))',
         "    );",
         "  }",
         "});"
@@ -75,7 +75,7 @@ describe('jsxtache converts sections', function() {
         "module.exports = React.createClass({displayName: 'exports',",
         "  render: function() {",
         "    return (",
-        'React.createElement("div", null, !!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(el, ndx) {      return (React.createElement("p", null, "Hello ", !!(!!el && !!el.name) ? (el.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null))), "."));    }.bind(this))  ) : (React.createElement("p", null, "Hello ", !!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)), ".")  )) : (null))',
+        'React.createElement("div", null, !!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(scope, ndx) {      return (React.createElement("p", null, "Hello ", !!(!!scope && !!scope.name) ? (scope.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null))), "."));    }.bind(this))  ) : (React.createElement("p", null, "Hello ", !!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)), ".")  )) : (null))',
         "    );",
         "  }",
         "});"

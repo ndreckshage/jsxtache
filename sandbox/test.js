@@ -24,6 +24,11 @@ var jsxtache = fs.readFileSync('./components/main.jsx.mustache', 'utf-8');
 var result = transform(jsx, jsxtache, null);
 // console.log(result.mustache);
 // console.log(result.jsx)
+//
+// var x = React.createFactory(eval(result.js));
+// var y = x({ arr: [{name: 'aaa'},{name: 'bbb'}]});
+// var z = React.renderToString(y);
+// console.log(z);
 
-var rendered = render(result, { something: 'goodbye', hello: true })
-console.log(rendered)
+// var rendered = render(result, { arr: [{name: 'aaa'},{name: 'bbb'}]});
+// console.log(rendered);
