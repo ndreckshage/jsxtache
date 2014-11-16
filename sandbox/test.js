@@ -10,5 +10,5 @@ var result = transform(jsx, jsxtache);
 // console.log(result.jsx)
 
 // var rendered = render(result, { arr: { something: 'hello' }});
-var rendered = render(result, { arr: [{something: 'aaa'},{something: 'bbb'}]});
+var rendered = render(result, { arr: [{parta: 'something', partb: '.com'},{parta: 'else', partb: '.org'}]});
 console.log(rendered);

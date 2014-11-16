@@ -240,4 +240,54 @@ describe("jsxstache handles html attributes", function() {
     expect(rendered.mustache).toEqual(expected);
     expect(rendered.react).toEqual(expected);
   });
+
+  it('handles scoped attribute variables in a loop', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div>'+",
+      "  '{{#this.props.arr}}'+",
+      "    '<a {{*'+",
+      "    '  href: link\\n'+",
+      "    '*}}>Hello</a>'+",
+      "  '{{/this.props.arr}}'+",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, { arr: [{link: "something.com"},{link: "something.org"},{link: "something.gov"}] });
+    var expected = '<div><a href="something.com">Hello</a><a href="something.org">Hello</a><a href="something.gov">Hello</a></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
+
+  it('handles multiple scoped attribute variables in a loop', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<div>'+",
+      "  '{{#this.props.arr}}'+",
+      "    '<a {{*'+",
+      "    '  href: \"http://\" + link_part_a + link_part_b\\n'+",
+      "    '*}}>Hello</a>'+",
+      "  '{{/this.props.arr}}'+",
+      "'</div>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, { arr: [{link_part_a: "hello", link_part_b: ".com"},{link_part_a: "bye", link_part_b: ".org"}] });
+    var expected = '<div><a href="http://hello.com">Hello</a><a href="http://bye.org">Hello</a></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
 });

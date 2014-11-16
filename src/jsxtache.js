@@ -224,11 +224,16 @@ function formatJSXtacheExpression(key, value, compileForMustache) {
 /**
  *
  */
-function getJSXtacheSubExpressionArray(key) {
+function getJSXtacheSubExpressionArray(key, scope) {
+  // console.log('getJSXtacheSubExpressionArray(key)', key, scope)
   key = utility.trim(key);
   key = key.split('+');
   return key.map(function (subKey) {
-    return utility.trim(subKey);
+    subKey = utility.trim(subKey);
+    if (!!scope && !subKey.match(/^[\'|\"].*[\'|\"]$/)) {
+      subKey = scope + '.' + subKey;
+    }
+    return subKey;
   });
 }
 
@@ -274,7 +279,7 @@ function formatJSXtacheSubExpressionForJSX(key) {
 /**
  * yamlish
  */
-function handleJSXtache(baseExpression, compileForMustache) {
+function handleJSXtache(baseExpression, compileForMustache, scope) {
   var rawExpressions = adjustIdentifier(baseExpression, JSXTACHE_SIGNIFIER, true);
   var expressions = convertRawExpressionsToExpressions(rawExpressions);
   var result = '';
@@ -286,7 +291,7 @@ function handleJSXtache(baseExpression, compileForMustache) {
           formatted = handleJSXSpecificKey(expression, expressions[expression]);
         }
       } else {
-        formatted = handleJSXMustacheKey(expression, expressions[expression], compileForMustache);
+        formatted = handleJSXMustacheKey(expression, expressions[expression], compileForMustache, scope);
       }
 
       if (formatted !== '') {
@@ -319,7 +324,7 @@ function handleJSXSpecificKey(key, value) {
 /**
  *
  */
-function handleJSXMustacheKey(key, value, compileForMustache) {
+function handleJSXMustacheKey(key, value, compileForMustache, scope) {
   switch (key) {
   case 'class':
   case 'className':
@@ -339,13 +344,15 @@ function handleJSXMustacheKey(key, value, compileForMustache) {
       combined += subExpression;
     });
   } else if (lodash.isString(value)) {
-    var subExpression = getJSXtacheSubExpressionArray(value);
+    var subExpression = getJSXtacheSubExpressionArray(value, scope);
     if (!!compileForMustache) {
       combined = formatJSXtacheSubExpressionForMustache(subExpression);
     } else {
       combined = formatJSXtacheSubExpressionForJSX(subExpression);
     }
   }
+
+  // console.log(key, value, scope)
 
   return key + '=' + (!!compileForMustache ? ('\"' + combined + '\"') : ('{' + combined + '}'));
 }
@@ -517,7 +524,7 @@ function crossCompile(mustache, jsx, tokens, scope, removePropsState) {
           if (jsx.charAt(jsx.length - 1) !== ' ') {
             jsx += ' ';
           }
-          jsx += handleJSXtache(val, false);
+          jsx += handleJSXtache(val, false, scope);
         } else {
           jsx += handleJSXName(val, scope, removePropsState);
         }
