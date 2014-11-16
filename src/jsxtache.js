@@ -589,9 +589,8 @@ function injectValues(jsx) {
     'var __mustacheBlock = function(blockProp, childrenWithScope, children) {' +
       'if (!!blockProp) {' +
         'if (toString.call(blockProp) === "[object Object]") {' +
-          'blockProp = [blockProp];' +
-        '}' +
-        'if (toString.call(blockProp) === "[object Array]") {' +
+          'return(childrenWithScope.call(this, blockProp));' +
+        '} else if (toString.call(blockProp) === "[object Array]") {' +
           'return blockProp.map(function(scope, ndx) {' +
             'return(childrenWithScope.call(this, scope, ndx));' +
           '}.bind(this));' +

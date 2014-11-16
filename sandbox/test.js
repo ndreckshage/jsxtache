@@ -7,7 +7,8 @@ var jsxtache = fs.readFileSync('./components/main.jsx.mustache', 'utf-8');
 
 var result = transform(jsx, jsxtache);
 // console.log(result.mustache);
-console.log(result.jsx)
+// console.log(result.jsx)
 
+// var rendered = render(result, { arr: { something: 'hello' }});
 var rendered = render(result, { arr: [{something: 'aaa'},{something: 'bbb'}]});
 console.log(rendered);
