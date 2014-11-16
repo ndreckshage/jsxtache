@@ -219,4 +219,25 @@ describe("jsxstache handles html attributes", function() {
     expect(rendered.mustache).toEqual(expected);
     expect(rendered.react).toEqual(expected);
   });
+
+  it('handles colons in attribute string', function() {
+    var code = [
+      "var React = require('react');",
+      "module.exports = React.createClass({",
+      "  render: function() {",
+      "    return (",
+      "'<a {{*' +",
+      "'  href: \"http://something.com\"\\n'+",
+      "'*}}>Hello</a>'",
+      "    );",
+      "  }",
+      "});"
+    ].join('\n');
+
+    var result = transform(code);
+    var rendered = render(result, {});
+    var expected = '<a href="http://something.com">Hello</a>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
+  });
 });

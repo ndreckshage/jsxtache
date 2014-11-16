@@ -365,7 +365,7 @@ function convertRawExpressionsToExpressions(rawExpressions) {
     if (!!breakNest) {
       parentKey = null;
     }
-    var parts = rawExpression.split(':');
+    var parts = rawExpression.split(/\:(.*)/);
     var key = utility.trim(parts[0]);
     var value = !!parts[1] ? parts[1] : [];
     if (!!parentKey) {
