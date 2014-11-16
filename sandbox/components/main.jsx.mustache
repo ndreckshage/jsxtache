@@ -1,14 +1,10 @@
-<div{{*
-  id: this.props.element_id
-  className:
-    "something": true
-    "hello": true
-  onClick: this._onClick
-*}}>
+<div>
   {{#this.props.arr}}
-    <p{{*
-      onClick: this._onClick
-      key: name
-    *}}>Hi</p>
+    <div {{*
+      key: true
+    *}}>
+      <p>{{something}}</p>
+      <span>one two three</span>
+    </div>
   {{/this.props.arr}}
 </div>

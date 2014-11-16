@@ -11,42 +11,22 @@ describe('jsxtache converts variables', function() {
       "module.exports = React.createClass({",
       "  render: function() {",
       "    return (",
-      "      '<div>'+",
-      "        '<p>Hello {{this.props.name}}</p>'+",
-      "      '</div>'",
+      "'<div>'+",
+      "  '<p>Hello {{this.props.name}}</p>'+",
+      "'</div>'",
       "    );",
       "  }",
       "});"
     ].join('\n');
 
-    var expected = {
-      mustache: "<div><p>Hello {{name}}</p></div>",
-      jsx: [
-        "var React = require('react');",
-        "module.exports = React.createClass({",
-        "  render: function() {",
-        "    return (",
-        '<div><p>Hello {!!(!!this.props && !!this.props.name) ? (this.props.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)))}</p></div>',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n'),
-      js: [
-        "var React = require('react');",
-        "module.exports = React.createClass({displayName: 'exports',",
-        "  render: function() {",
-        "    return (",
-        'React.createElement("div", null, React.createElement("p", null, "Hello ", !!(!!this.props && !!this.props.name) ? (this.props.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)))))',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n')
-    }
-
     var result = transform(code);
-    expect(result).toEqual(expected);
+    expect(result.mustache).toMatch(/\{\{name\}\}/);
+    expect(result.jsx).toMatch(/this\.props\.name/);
+    expect(result.js).toMatch(/this\.props\.name/);
     var rendered = render(result, { name: 'Nick' });
-    expect(rendered.mustache).toEqual(rendered.react);
+    var expected = '<div><p>Hello Nick</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
 
   it('handles state', function() {
@@ -66,40 +46,14 @@ describe('jsxtache converts variables', function() {
       "});"
     ].join('\n');
 
-    var expected = {
-      mustache: "<div><p>Hello {{name}}</p></div>",
-      jsx: [
-        "var React = require('react');",
-        "module.exports = React.createClass({",
-        "  getInitialState: function() {",
-        "    return { name: this.props.name };",
-        "  },",
-        "  render: function() {",
-        "    return (",
-        "<div><p>Hello {!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)))}</p></div>",
-        "    );",
-        "  }",
-        "});"
-      ].join('\n'),
-      js: [
-        "var React = require('react');",
-        "module.exports = React.createClass({displayName: 'exports',",
-        "  getInitialState: function() {",
-        "    return { name: this.props.name };",
-        "  },",
-        "  render: function() {",
-        "    return (",
-        'React.createElement("div", null, React.createElement("p", null, "Hello ", !!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.state && !!this.state.name) ? (this.state.name) : (!!(!!this.props && !!this.props.name) ? (this.props.name) : (null)))))',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n')
-    }
-
     var result = transform(code);
-    expect(result).toEqual(expected);
+    expect(result.mustache).toMatch(/\{\{name\}\}/);
+    expect(result.jsx).toMatch(/this\.state\.name/);
+    expect(result.js).toMatch(/this\.state\.name/);
     var rendered = render(result, { name: 'Nick' });
-    expect(rendered.mustache).toEqual(rendered.react);
+    var expected = '<div><p>Hello Nick</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
 
   // this is useful for mustache blocks, where mustache compiles the following:
@@ -112,42 +66,23 @@ describe('jsxtache converts variables', function() {
       "module.exports = React.createClass({",
       "  render: function() {",
       "    return (",
-      "      '<div>'+",
-      "        '{{#this.props.people}}<p>Hello {{nameA}} -- {{nameB}} -- {{this.props.nameB}}</p>{{/this.props.people}}'+",
-      "      '</div>'",
+      "'<div>'+",
+      "  '{{#this.props.people}}<p>Hello {{nameA}} -- {{nameB}} -- {{this.props.nameB}}</p>{{/this.props.people}}'+",
+      "'</div>'",
       "    );",
       "  }",
       "});"
     ].join('\n');
 
-    var expected = {
-      mustache: "<div>{{#people}}<p>Hello {{nameA}} -- {{nameB}} -- {{nameB}}</p>{{/people}}</div>",
-      jsx: [
-        "var React = require('react');",
-        "module.exports = React.createClass({",
-        "  render: function() {",
-        "    return (",
-        '<div>{!!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(scope, ndx) {      return (<p>Hello {!!(!!scope && !!scope.nameA) ? (scope.nameA) : (!!(!!this.state && !!this.state.nameA) ? (this.state.nameA) : (!!(!!this.props && !!this.props.nameA) ? (this.props.nameA) : (null)))} -- {!!(!!scope && !!scope.nameB) ? (scope.nameB) : (!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null)))} -- {!!(!!scope && !!scope.nameB) ? (scope.nameB) : (!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null)))}</p>);    }.bind(this))  ) : (<p>Hello {!!(!!this.state && !!this.state.nameA) ? (this.state.nameA) : (!!(!!this.props && !!this.props.nameA) ? (this.props.nameA) : (null))} -- {!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null))} -- {!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null)))}</p>  )) : (null)}</div>',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n'),
-      js: [
-        "var React = require('react');",
-        "module.exports = React.createClass({displayName: 'exports',",
-        "  render: function() {",
-        "    return (",
-        'React.createElement("div", null, !!this.props.people ? (  v = this.props.people,  toString.call(v) === "[object Object]" ? (v = [v]) : (null),  toString.call(v) === "[object Array]" ? (    v.map(function(scope, ndx) {      return (React.createElement("p", null, "Hello ", !!(!!scope && !!scope.nameA) ? (scope.nameA) : (!!(!!this.state && !!this.state.nameA) ? (this.state.nameA) : (!!(!!this.props && !!this.props.nameA) ? (this.props.nameA) : (null))), " -- ", !!(!!scope && !!scope.nameB) ? (scope.nameB) : (!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null))), " -- ", !!(!!scope && !!scope.nameB) ? (scope.nameB) : (!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null)))));    }.bind(this))  ) : (React.createElement("p", null, "Hello ", !!(!!this.state && !!this.state.nameA) ? (this.state.nameA) : (!!(!!this.props && !!this.props.nameA) ? (this.props.nameA) : (null)), " -- ", !!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null)), " -- ", !!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (!!(!!this.state && !!this.state.nameB) ? (this.state.nameB) : (!!(!!this.props && !!this.props.nameB) ? (this.props.nameB) : (null))))  )) : (null))',
-        "    );",
-        "  }",
-        "});"
-      ].join('\n')
-    }
-
     var result = transform(code);
-    expect(result).toEqual(expected);
+    expect(result.mustache).toMatch(/\{\{\#people\}\}.*\{nameA.*\{nameB.*\{nameB.*\{\/people/);
+    var regexp = /\__mustacheBlock\.call\(/;
+    expect(result.jsx).toMatch(regexp);
+    expect(result.js).toMatch(regexp);
     var rendered = render(result, { people: [{ name: '1' }, { name: '2', nameA: 'Ca', nameB: 'Cb' }, { name: '3', nameB: 'Cb' }], nameA: 'Oa', nameB: 'Ob' });
-    expect(rendered.mustache).toEqual(rendered.react);
+    var expected = '<div><p>Hello Oa -- Ob -- Ob</p><p>Hello Ca -- Cb -- Cb</p><p>Hello Oa -- Cb -- Cb</p></div>';
+    expect(rendered.mustache).toEqual(expected);
+    expect(rendered.react).toEqual(expected);
   });
 
   it('handles unsafe variables', function() {

@@ -20,6 +20,7 @@ var PREFIX_MUSTACHE_PARTIAL = '';
 var JSXTACHE_SIGNIFIER = '*';
 
 var requirePartials = [];
+var NEEDS_JSX_BLOCK_FUNC = false;
 
 /**
  * traverse esprima / AST syntax tree
@@ -412,45 +413,21 @@ function handleMustacheBlock(value, children, inverse) {
  * accomplishes inline in JSX expression {} without needing a var (which would need additional buffer to inject outside of return)
  * or unintentionally rewriting props. also does cross browser isArray / isObject checks without lodash / underscore
  * (since we cant rely on dependencies for code that can be injected anywhere)
- *
- * ends up looking something like this -->
- *
- * {!!this.props.something ? (
- *   v = this.props.something,
- *   toString.call(v) === '[object Object]' ? (v = [v]) : (null),
- *   toString.call(v) === '[object Array]' ? (
- *     v.map(function(scope, ndx) {
- *       return <p key={ndx}>{scope.name}</p>;
- *     })
- *   ) : (
- *     <p>{name}</p>
- *   )
- * ) : (null)}
  */
 function handleJSXBlock(value, children) {
-  var str = JSX_TAGS[0] + "!!" + value + " ? (" +
-  "  v = " + value + "," +
-  "  toString.call(v) === \"[object Object]\" ? (v = [v]) : (null)," +
-  "  toString.call(v) === \"[object Array]\" ? (" +
-  "    v.map(function(scope, ndx) {" +
-  "      return (";
+  NEEDS_JSX_BLOCK_FUNC = true;
 
+  var str = JSX_TAGS[0];
+  str += '__mustacheBlock.call(this, ' + value + ',function(scope,ndx){return(';
   if (!!children && !!lodash.isArray(children)) {
     str = crossCompile(null, str, children, 'scope', true).jsx;
   }
-
-  str += ");" +
-  "    }.bind(this))" +
-  "  ) : (";
-
+  str += ');},function(){return(';
   if (!!children && !!lodash.isArray(children)) {
     str = crossCompile(null, str, children).jsx;
   }
-
-  str += "  )" +
-  ") : (null)" + JSX_TAGS[1];
-
-  // console.log(str, '\n')
+  str += ');})';
+  str += JSX_TAGS[1];
 
   return str;
 }
@@ -596,15 +573,42 @@ function crossCompile(mustache, jsx, tokens, scope, removePropsState) {
   }
 }
 
-function injectRequires(jsx) {
+/**
+ *
+ */
+function injectValues(jsx) {
   requirePartials = lodash.uniq(requirePartials, 'varName');
   var requires = '';
   requirePartials.forEach(function(partial) {
     requires += 'var ' + partial.varName + ' = require(\'' + partial.path + '\');\n';
   });
+
+  var jsxBlockFunc = '';
+  if (NEEDS_JSX_BLOCK_FUNC) {
+    jsxBlockFunc = '' +
+    'var __mustacheBlock = function(blockProp, childrenWithScope, children) {' +
+      'if (!!blockProp) {' +
+        'if (toString.call(blockProp) === "[object Object]") {' +
+          'blockProp = [blockProp];' +
+        '}' +
+        'if (toString.call(blockProp) === "[object Array]") {' +
+          'return blockProp.map(function(scope, ndx) {' +
+            'return(childrenWithScope.call(this, scope, ndx));' +
+          '}.bind(this));' +
+        '} else {' +
+          'return(children.call(this));' +
+        '}' +
+      '}' +
+    '};';
+  }
+
+  var str = (requires + jsxBlockFunc + jsx);
+
   // reset requirePartials buffer since global scope
   requirePartials = [];
-  return (requires + jsx);
+  NEEDS_JSX_BLOCK_FUNC = false;
+
+  return str;
 }
 
 /**
@@ -669,7 +673,7 @@ function transform(jsx, jsxtache, mustache, prefixMustachePartial) {
       }
 
       jsx = renderReplace(jsx, result.jsx);
-      jsx = injectRequires(jsx);
+      jsx = injectValues(jsx);
       mustache = result.mustache;
     }
   } else {
