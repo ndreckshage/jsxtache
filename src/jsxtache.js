@@ -634,7 +634,7 @@ function parse(jsx) {
  */
 function transform(jsx, jsxtache, mustache, prefixMustachePartial) {
   if (!jsx) {
-    throw chalk.red('Cannot transform that which cannot be transformed.')
+    jsx = "var React=require('react');module.exports=React.createClass({render:function(){return;}});";
   }
 
   if (!!prefixMustachePartial) {

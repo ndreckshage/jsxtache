@@ -141,11 +141,12 @@ function createFileGroups(files) {
  *
  */
 function compile(group, name) {
-  if (!group.jsx) {
-    throw chalk.red('A component must have a jsx file.')
+  var jsx = null;
+  if (fs.existsSync(group.jsx)) {
+    jsx = fs.readFileSync(group.jsx, 'utf-8')
   }
 
-  var jsx = fs.readFileSync(group.jsx, 'utf-8'), jsxtache = null, mustache = null;
+  var jsxtache = null, mustache = null;
   if (!!group.jsxtache) {
     jsxtache = fs.readFileSync(group.jsxtache, 'utf-8');
   } else if (!!group.mustache) {
