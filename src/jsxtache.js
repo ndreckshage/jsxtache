@@ -3,7 +3,7 @@
 // @TODO REFACTOR! C0DE IZ RUFF.
 // @TODO gotta work on dev friendliness + error handling. compiliation failures aren't pretty.
 
-var esprima = require('esprima');
+var esprima = require('esprima-fb');
 var lodash = require('lodash');
 var tokenize = require('mustache').parse;
 var reactTools = require('react-tools');
@@ -688,7 +688,9 @@ function transform(jsx, jsxtache, mustache, prefixMustachePartial) {
 
   compiled.mustache = mustache.replace(/\n/g, '');
   compiled.jsx = jsx;
-  compiled.js = reactTools.transform(compiled.jsx);
+  compiled.js = reactTools.transform(compiled.jsx, {
+    stripTypes: true
+  });
   return compiled;
 }
 
